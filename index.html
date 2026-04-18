@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<!--
+  Productivity Index Calculator
+  Author: Enrique Philippe Gutiérrez Fedoruk
+  LinkedIn: https://www.linkedin.com/in/enrique-philippe-guti%C3%A9rrez-fedoruk-493060123/
+  License: MIT License
+  Date: 2026
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Productivity Index Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0e12;
+    --surface: #14171e;
+    --surface2: #1a1e28;
+    --border: #2a2f3d;
+    --text: #e8e6e1;
+    --text-dim: #8a8d97;
+    --accent: #d4a259;
+    --accent-glow: #d4a25933;
+    --oil: #c07830;
+    --pressure: #4a90d9;
+    --green: #5cb85c;
+    --red: #d9534f;
+    --chart-grid: #1f2330;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  header {
+    padding: 2rem 3rem 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  header h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 2.2rem;
+    font-weight: 400;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+
+  header .subtitle {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    min-height: calc(100vh - 80px);
+  }
+
+  /* INPUT PANEL */
+  .panel {
+    padding: 1.5rem 2rem;
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    max-height: calc(100vh - 80px);
+  }
+
+  .section-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    margin: 1.5rem 0 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .input-group {
+    position: relative;
+  }
+
+  .input-group label {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    margin-bottom: 0.25rem;
+    letter-spacing: 0.05em;
+  }
+
+  .input-group label .symbol {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .input-group input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.5rem 0.65rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    border-radius: 4px;
+    transition: border-color 0.2s;
+  }
+
+  .input-group input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+
+  .unit {
+    position: absolute;
+    right: 8px;
+    bottom: 7px;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    pointer-events: none;
+  }
+
+  button.calc-btn {
+    width: 100%;
+    margin-top: 1.5rem;
+    padding: 0.75rem;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+
+  button.calc-btn:hover {
+    background: #e0b36a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px var(--accent-glow);
+  }
+
+  /* RESULTS CARDS */
+  .results-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+  }
+
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.75rem;
+    text-align: center;
+    transition: border-color 0.3s;
+  }
+
+  .result-card.highlight {
+    border-color: var(--accent);
+    box-shadow: 0 0 15px var(--accent-glow);
+  }
+
+  .result-card .val {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--accent);
+    margin: 0.25rem 0;
+  }
+
+  .result-card .lbl {
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .result-card .unt {
+    font-size: 0.55rem;
+    color: var(--text-dim);
+  }
+
+  /* CHART AREA */
+  .charts {
+    padding: 1.5rem 2rem;
+    overflow-y: auto;
+    max-height: calc(100vh - 80px);
+  }
+
+  .chart-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .chart-tab {
+    padding: 0.6rem 1.25rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    background: none;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .chart-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .chart-tab:hover { color: var(--text); }
+
+  .chart-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    position: relative;
+    min-height: 420px;
+  }
+
+  canvas {
+    width: 100%;
+    height: 400px;
+  }
+
+  /* FORMULA DISPLAY */
+  .formula-bar {
+    margin-top: 1.25rem;
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    line-height: 1.8;
+  }
+
+  .formula-bar .eq {
+    color: var(--accent);
+    font-size: 0.85rem;
+  }
+
+  /* SENSITIVITY CONTROLS */
+  .sens-controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .sens-controls select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.4rem 0.6rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    border-radius: 4px;
+  }
+
+  .sens-controls select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .sens-controls label {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    .panel { border-right: none; border-bottom: 1px solid var(--border); max-height: none; }
+    .charts { max-height: none; }
+    .results-strip { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Author footer */
+  .author-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.5rem 2rem;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+  }
+  .author-footer a {
+    color: var(--accent);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .author-footer a:hover { color: #e0b36a; text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Productivity Index</h1>
+  <span class="subtitle">Darcy Radial Flow &middot; Steady State</span>
+</header>
+
+<div class="app">
+  <!-- INPUT PANEL -->
+  <div class="panel">
+    <div class="section-label">Reservoir Properties</div>
+    <div class="input-row">
+      <div class="input-group">
+        <label><span class="symbol">h</span> &mdash; Thickness</label>
+        <input type="number" id="h" value="50" step="any">
+        <span class="unit">ft</span>
+      </div>
+      <div class="input-group">
+        <label><span class="symbol">k</span> &mdash; Permeability</label>
+        <input type="number" id="k" value="100" step="any">
+        <span class="unit">mD</span>
+      </div>
+    </div>
+
+    <div class="section-label">Fluid Properties</div>
+    <div class="input-row">
+      <div class="input-group">
+        <label><span class="symbol">B</span> &mdash; FVF</label>
+        <input type="number" id="B" value="1.2" step="any">
+        <span class="unit">rb/stb</span>
+      </div>
+      <div class="input-group">
+        <label><span class="symbol">&mu;</span> &mdash; Viscosity</label>
+        <input type="number" id="mu" value="0.8" step="any">
+        <span class="unit">cp</span>
+      </div>
+    </div>
+
+    <div class="section-label">Well Geometry</div>
+    <div class="input-row">
+      <div class="input-group">
+        <label><span class="symbol">R</span> &mdash; Drainage Radius</label>
+        <input type="number" id="R" value="1000" step="any">
+        <span class="unit">ft</span>
+      </div>
+      <div class="input-group">
+        <label><span class="symbol">r<sub>w</sub></span> &mdash; Wellbore Radius</label>
+        <input type="number" id="rw" value="0.328" step="any">
+        <span class="unit">ft</span>
+      </div>
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label><span class="symbol">S</span> &mdash; Skin Factor</label>
+        <input type="number" id="S" value="0" step="any">
+        <span class="unit">&mdash;</span>
+      </div>
+      <div class="input-group"></div>
+    </div>
+
+    <div class="section-label">Pressure Conditions</div>
+    <div class="input-row">
+      <div class="input-group">
+        <label><span class="symbol">P<sub>R</sub></span> &mdash; Reservoir</label>
+        <input type="number" id="P_R" value="4000" step="any">
+        <span class="unit">psi</span>
+      </div>
+      <div class="input-group">
+        <label><span class="symbol">P<sub>BH</sub></span> &mdash; Flowing BHP</label>
+        <input type="number" id="P_BH" value="2000" step="any">
+        <span class="unit">psi</span>
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">Calculate</button>
+
+    <div class="results-strip" id="results">
+      <div class="result-card highlight">
+        <div class="lbl">PI</div>
+        <div class="val" id="res-pi">—</div>
+        <div class="unt">stb/d/psi</div>
+      </div>
+      <div class="result-card">
+        <div class="lbl">Q</div>
+        <div class="val" id="res-q">—</div>
+        <div class="unt">stb/day</div>
+      </div>
+      <div class="result-card">
+        <div class="lbl">Q<sub>BH</sub></div>
+        <div class="val" id="res-qbh">—</div>
+        <div class="unt">rb/day</div>
+      </div>
+      <div class="result-card">
+        <div class="lbl">Drawdown</div>
+        <div class="val" id="res-dd">—</div>
+        <div class="unt">psi</div>
+      </div>
+    </div>
+
+    <div class="formula-bar">
+      <div class="eq">PI = 0.00708 &middot; h &middot; k / [ B &middot; &mu; &middot; (ln(R/r<sub>w</sub>) + S) ]</div>
+      <div style="margin-top:0.5rem">Q = PI &times; (P<sub>R</sub> &minus; P<sub>BH</sub>)</div>
+      <div>Q<sub>BH</sub> = Q &times; B</div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="charts">
+    <div class="chart-tabs">
+      <button class="chart-tab active" onclick="switchTab('ipr')">IPR Curve</button>
+      <button class="chart-tab" onclick="switchTab('sensitivity')">Sensitivity</button>
+      <button class="chart-tab" onclick="switchTab('skin')">Skin Analysis</button>
+    </div>
+
+    <!-- Sensitivity controls (hidden unless on sensitivity tab) -->
+    <div class="sens-controls" id="sens-controls" style="display:none;">
+      <label>Parameter:
+        <select id="sens-param" onchange="calculate()">
+          <option value="k">Permeability (k)</option>
+          <option value="h">Thickness (h)</option>
+          <option value="S">Skin Factor (S)</option>
+          <option value="mu">Viscosity (&mu;)</option>
+          <option value="B">FVF (B)</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="chart-container">
+      <canvas id="chart"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== CALCULATION ENGINE =====
+function getParams() {
+  return {
+    h:    parseFloat(document.getElementById('h').value),
+    k:    parseFloat(document.getElementById('k').value),
+    B:    parseFloat(document.getElementById('B').value),
+    mu:   parseFloat(document.getElementById('mu').value),
+    R:    parseFloat(document.getElementById('R').value),
+    rw:   parseFloat(document.getElementById('rw').value),
+    S:    parseFloat(document.getElementById('S').value),
+    P_R:  parseFloat(document.getElementById('P_R').value),
+    P_BH: parseFloat(document.getElementById('P_BH').value),
+  };
+}
+
+function calcPI(p) {
+  const num = 0.00708 * p.h * p.k;
+  const den = p.B * p.mu * (Math.log(p.R / p.rw) + p.S);
+  if (den <= 0) return { PI: NaN, Q: NaN, Q_BH: NaN, drawdown: NaN };
+  const PI = num / den;
+  const dd = p.P_R - p.P_BH;
+  const Q = PI * dd;
+  return { PI, Q, Q_BH: Q * p.B, drawdown: dd };
+}
+
+// ===== CHART ENGINE (Canvas) =====
+let currentTab = 'ipr';
+const canvas = document.getElementById('chart');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  const container = canvas.parentElement;
+  canvas.width = container.clientWidth - 48;
+  canvas.height = 400;
+}
+
+window.addEventListener('resize', () => { resizeCanvas(); drawChart(); });
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.chart-tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+  document.getElementById('sens-controls').style.display = tab === 'sensitivity' ? 'flex' : 'none';
+  drawChart();
+}
+
+function drawChart() {
+  resizeCanvas();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (currentTab === 'ipr') drawIPR();
+  else if (currentTab === 'sensitivity') drawSensitivity();
+  else if (currentTab === 'skin') drawSkinAnalysis();
+}
+
+function drawAxes(xLabel, yLabel, xMax, yMax, xMin = 0, yMin = 0) {
+  const m = { top: 30, right: 30, bottom: 50, left: 70 };
+  const w = canvas.width - m.left - m.right;
+  const h = canvas.height - m.top - m.bottom;
+
+  // Grid
+  ctx.strokeStyle = '#1f2330';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const y = m.top + (h / 5) * i;
+    ctx.beginPath(); ctx.moveTo(m.left, y); ctx.lineTo(m.left + w, y); ctx.stroke();
+    const x = m.left + (w / 5) * i;
+    ctx.beginPath(); ctx.moveTo(x, m.top); ctx.lineTo(x, m.top + h); ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle = '#2a2f3d';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(m.left, m.top);
+  ctx.lineTo(m.left, m.top + h);
+  ctx.lineTo(m.left + w, m.top + h);
+  ctx.stroke();
+
+  // Labels
+  ctx.fillStyle = '#8a8d97';
+  ctx.font = '11px "DM Mono"';
+  ctx.textAlign = 'center';
+  ctx.fillText(xLabel, m.left + w / 2, canvas.height - 8);
+
+  ctx.save();
+  ctx.translate(14, m.top + h / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText(yLabel, 0, 0);
+  ctx.restore();
+
+  // Tick labels
+  ctx.font = '10px "DM Mono"';
+  ctx.fillStyle = '#6a6d77';
+  for (let i = 0; i <= 5; i++) {
+    const xVal = xMin + (xMax - xMin) * (i / 5);
+    ctx.textAlign = 'center';
+    ctx.fillText(formatNum(xVal), m.left + (w / 5) * i, m.top + h + 20);
+
+    const yVal = yMin + (yMax - yMin) * (1 - i / 5);
+    ctx.textAlign = 'right';
+    ctx.fillText(formatNum(yVal), m.left - 8, m.top + (h / 5) * i + 4);
+  }
+
+  return { m, w, h, xMin, xMax, yMin, yMax };
+}
+
+function toPixel(ax, xVal, yVal) {
+  const px = ax.m.left + ((xVal - ax.xMin) / (ax.xMax - ax.xMin)) * ax.w;
+  const py = ax.m.top + (1 - (yVal - ax.yMin) / (ax.yMax - ax.yMin)) * ax.h;
+  return [px, py];
+}
+
+function formatNum(n) {
+  if (Math.abs(n) >= 1000) return (n / 1000).toFixed(1) + 'k';
+  if (Math.abs(n) < 0.01 && n !== 0) return n.toExponential(1);
+  if (Number.isInteger(n)) return n.toString();
+  return n.toFixed(2);
+}
+
+function drawLine(ax, points, color, lineWidth = 2) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lineWidth;
+  ctx.beginPath();
+  points.forEach((pt, i) => {
+    const [px, py] = toPixel(ax, pt[0], pt[1]);
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  });
+  ctx.stroke();
+}
+
+function drawDot(ax, x, y, color, r = 5) {
+  const [px, py] = toPixel(ax, x, y);
+  ctx.beginPath();
+  ctx.arc(px, py, r, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.strokeStyle = '#0c0e12';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+function drawLegend(items, x, y) {
+  ctx.font = '10px "DM Mono"';
+  items.forEach((item, i) => {
+    ctx.fillStyle = item.color;
+    ctx.fillRect(x, y + i * 18, 12, 3);
+    ctx.fillStyle = '#8a8d97';
+    ctx.textAlign = 'left';
+    ctx.fillText(item.label, x + 18, y + i * 18 + 5);
+  });
+}
+
+// ===== IPR CURVE =====
+function drawIPR() {
+  const p = getParams();
+  const res = calcPI(p);
+  if (isNaN(res.PI)) return;
+
+  // Generate IPR data
+  const pts = [];
+  const n = 100;
+  for (let i = 0; i <= n; i++) {
+    const pbh = (p.P_R / n) * i;
+    const pp = { ...p, P_BH: pbh };
+    const r = calcPI(pp);
+    pts.push([r.Q, pbh]);
+  }
+
+  const qMax = pts.reduce((m, pt) => Math.max(m, pt[0]), 0) * 1.1;
+  const ax = drawAxes('Flow Rate Q (stb/day)', 'P_BH (psi)', qMax, p.P_R * 1.05);
+
+  // IPR line
+  drawLine(ax, pts, '#4a90d9', 2.5);
+
+  // Operating point
+  drawDot(ax, res.Q, p.P_BH, '#d4a259', 6);
+
+  // AOF
+  const aof = calcPI({ ...p, P_BH: 0 });
+  drawDot(ax, aof.Q, 0, '#5cb85c', 6);
+
+  // Dashed lines to operating point
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = '#d4a25966';
+  ctx.lineWidth = 1;
+  const [opx, opy] = toPixel(ax, res.Q, p.P_BH);
+  const [ox] = toPixel(ax, 0, p.P_BH);
+  const [, oby] = toPixel(ax, res.Q, 0);
+  ctx.beginPath(); ctx.moveTo(ox, opy); ctx.lineTo(opx, opy); ctx.lineTo(opx, oby); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Labels
+  drawLegend([
+    { color: '#4a90d9', label: 'IPR Curve' },
+    { color: '#d4a259', label: `Operating (Q=${res.Q.toFixed(0)})` },
+    { color: '#5cb85c', label: `AOF = ${aof.Q.toFixed(0)} stb/d` },
+  ], ax.m.left + ax.w - 180, ax.m.top + 15);
+
+  // PI annotation
+  ctx.fillStyle = '#d4a259';
+  ctx.font = '12px "DM Mono"';
+  ctx.textAlign = 'left';
+  ctx.fillText(`PI = ${res.PI.toFixed(4)} stb/d/psi`, ax.m.left + 15, ax.m.top + 20);
+}
+
+// ===== SENSITIVITY =====
+function drawSensitivity() {
+  const p = getParams();
+  const param = document.getElementById('sens-param').value;
+
+  const ranges = {
+    k:  { values: [10, 25, 50, 100, 250, 500], unit: 'mD' },
+    h:  { values: [10, 25, 50, 75, 100, 150], unit: 'ft' },
+    S:  { values: [-3, -1, 0, 2, 5, 10], unit: '' },
+    mu: { values: [0.3, 0.5, 0.8, 1.5, 3, 5], unit: 'cp' },
+    B:  { values: [1.0, 1.1, 1.2, 1.4, 1.6, 2.0], unit: 'rb/stb' },
+  };
+
+  const cfg = ranges[param];
+  const colors = ['#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6'];
+
+  // Generate all curves
+  const allPts = [];
+  let globalQMax = 0;
+
+  cfg.values.forEach(val => {
+    const pts = [];
+    const pp = { ...p };
+    pp[param] = val;
+    for (let i = 0; i <= 80; i++) {
+      pp.P_BH = (p.P_R / 80) * i;
+      const r = calcPI(pp);
+      if (!isNaN(r.Q) && r.Q >= 0) {
+        pts.push([r.Q, pp.P_BH]);
+        globalQMax = Math.max(globalQMax, r.Q);
+      }
+    }
+    allPts.push(pts);
+  });
+
+  const ax = drawAxes('Flow Rate Q (stb/day)', 'P_BH (psi)', globalQMax * 1.1, p.P_R * 1.05);
+
+  allPts.forEach((pts, i) => {
+    if (pts.length > 0) drawLine(ax, pts, colors[i], 2);
+  });
+
+  drawLegend(
+    cfg.values.map((v, i) => ({ color: colors[i], label: `${param}=${v} ${cfg.unit}` })),
+    ax.m.left + ax.w - 160, ax.m.top + 10
+  );
+}
+
+// ===== SKIN ANALYSIS =====
+function drawSkinAnalysis() {
+  const p = getParams();
+  const skins = [];
+  const pis = [];
+
+  for (let s = -5; s <= 25; s++) {
+    const pp = { ...p, S: s };
+    const r = calcPI(pp);
+    if (!isNaN(r.PI) && r.PI > 0) {
+      skins.push(s);
+      pis.push(r.PI);
+    }
+  }
+
+  const piMax = Math.max(...pis) * 1.15;
+  const ax = drawAxes('Skin Factor (S)', 'PI (stb/d/psi)', 25, piMax, -5, 0);
+
+  // Bar chart
+  const barW = ax.w / (skins.length + 2);
+  skins.forEach((s, i) => {
+    const [px, py] = toPixel(ax, s, pis[i]);
+    const [, baseY] = toPixel(ax, s, 0);
+    const barColor = s < 0 ? '#2ecc71' : s === 0 ? '#3498db' : `rgba(217,83,79,${0.4 + 0.6 * (s / 25)})`;
+    ctx.fillStyle = barColor;
+    ctx.fillRect(px - barW / 2, py, barW, baseY - py);
+  });
+
+  // Current skin marker
+  const curRes = calcPI(p);
+  if (!isNaN(curRes.PI)) {
+    drawDot(ax, p.S, curRes.PI, '#d4a259', 7);
+    ctx.fillStyle = '#d4a259';
+    ctx.font = '11px "DM Mono"';
+    ctx.textAlign = 'center';
+    const [dx, dy] = toPixel(ax, p.S, curRes.PI);
+    ctx.fillText(`Current: ${curRes.PI.toFixed(4)}`, dx, dy - 12);
+  }
+
+  drawLegend([
+    { color: '#2ecc71', label: 'Stimulated (S<0)' },
+    { color: '#3498db', label: 'No damage (S=0)' },
+    { color: '#d9534f', label: 'Damaged (S>0)' },
+  ], ax.m.left + 15, ax.m.top + 10);
+}
+
+// ===== UPDATE RESULTS =====
+function calculate() {
+  const p = getParams();
+  const r = calcPI(p);
+
+  document.getElementById('res-pi').textContent = isNaN(r.PI) ? 'ERR' : r.PI.toFixed(4);
+  document.getElementById('res-q').textContent = isNaN(r.Q) ? 'ERR' : r.Q.toFixed(1);
+  document.getElementById('res-qbh').textContent = isNaN(r.Q_BH) ? 'ERR' : r.Q_BH.toFixed(1);
+  document.getElementById('res-dd').textContent = isNaN(r.drawdown) ? 'ERR' : r.drawdown.toFixed(1);
+
+  drawChart();
+}
+
+// ===== INIT =====
+document.querySelectorAll('input').forEach(inp => {
+  inp.addEventListener('input', calculate);
+});
+
+calculate();
+</script>
+
+<footer class="author-footer">
+  <span>&copy; 2026 Enrique Philippe Gutiérrez Fedoruk &mdash; MIT License</span>
+  <a href="https://www.linkedin.com/in/enrique-philippe-guti%C3%A9rrez-fedoruk-493060123/" target="_blank" rel="noopener">LinkedIn</a>
+</footer>
+
+</body>
+</html>
